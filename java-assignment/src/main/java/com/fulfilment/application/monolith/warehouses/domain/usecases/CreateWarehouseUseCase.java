@@ -2,10 +2,10 @@ package com.fulfilment.application.monolith.warehouses.domain.usecases;
 
 import java.time.LocalDateTime;
 
-import com.fulfilment.application.monolith.location.LocationGateway;
 import com.fulfilment.application.monolith.warehouses.domain.models.Location;
 import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.CreateWarehouseOperation;
+import com.fulfilment.application.monolith.warehouses.domain.ports.LocationResolver;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -13,11 +13,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 
   private final WarehouseStore warehouseStore;
-  private final LocationGateway locationGateway;
+  private final LocationResolver locationResolver;
 
-  public CreateWarehouseUseCase(WarehouseStore warehouseStore, LocationGateway locationGateway) {
+  public CreateWarehouseUseCase(WarehouseStore warehouseStore, LocationResolver locationResolver) {
     this.warehouseStore = warehouseStore;
-    this.locationGateway = locationGateway;
+    this.locationResolver = locationResolver;
   }
 
   @Override
@@ -25,7 +25,7 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
     if (warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode) != null) {
       throw new IllegalArgumentException("Business Unit Code already exists");
     }
-    Location location = locationGateway.resolveByIdentifier(warehouse.location);
+    Location location = locationResolver.resolveByIdentifier(warehouse.location);
 
     if (location == null) {
       throw new IllegalArgumentException("Invalid location");
@@ -34,6 +34,7 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
     if (warehouse.capacity > location.maxCapacity) {
       throw new IllegalArgumentException("Capacity exceeds location maximum");
     }
+
     if (warehouse.stock > warehouse.capacity) {
       throw new IllegalArgumentException("Stock exceeds warehouse capacity");
     }
@@ -44,7 +45,18 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
     if (warehouseAtLocation >= location.maxNumberOfWarehouses) {
       throw new IllegalArgumentException("Maximum number of warehouses reached");
     }
+
+    int totalActiveCapacityAtLocation = warehouseStore.getAll().stream()
+        .filter(w -> w.location.equals(warehouse.location))
+        .mapToInt(w -> w.capacity)
+        .sum();
+
+    if (totalActiveCapacityAtLocation + warehouse.capacity > location.maxCapacity) {
+      throw new IllegalArgumentException("Capacity exceeds location maximum");
+    }
+
     warehouse.createdAt = LocalDateTime.now();
+    warehouse.archivedAt = null;
     warehouseStore.create(warehouse);
   }
 }

@@ -9,6 +9,7 @@ import com.warehouse.api.beans.Warehouse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.WebApplicationException;
 import java.util.List;
 
 @RequestScoped
@@ -33,9 +34,11 @@ public class WarehouseResourceImpl implements WarehouseResource {
 
   @Override
   public Warehouse createANewWarehouseUnit(@NotNull Warehouse data) {
-
-    createWarehouseUseCase.create(
-        toDomainWarehouse(data));
+    try {
+      createWarehouseUseCase.create(toDomainWarehouse(data));
+    } catch (IllegalArgumentException e) {
+      throw new WebApplicationException(e.getMessage(), 400);
+    }
 
     return data;
   }
@@ -46,8 +49,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
     var warehouse = warehouseRepository.findByBusinessUnitCode(id);
 
     if (warehouse == null) {
-      throw new RuntimeException(
-          "Warehouse not found: " + id);
+      throw new WebApplicationException("Warehouse not found: " + id, 404);
     }
 
     return toWarehouseResponse(warehouse);
@@ -59,8 +61,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
     var warehouse = warehouseRepository.findByBusinessUnitCode(id);
 
     if (warehouse == null) {
-      throw new RuntimeException(
-          "Warehouse not found: " + id);
+      throw new WebApplicationException("Warehouse not found: " + id, 404);
     }
 
     archiveWarehouseUseCase.archive(warehouse);
@@ -75,7 +76,14 @@ public class WarehouseResourceImpl implements WarehouseResource {
 
     domainWarehouse.businessUnitCode = businessUnitCode;
 
-    replaceWarehouseUseCase.replace(domainWarehouse);
+    try {
+      replaceWarehouseUseCase.replace(domainWarehouse);
+    } catch (IllegalArgumentException e) {
+      if ("Warehouse not found".equals(e.getMessage())) {
+        throw new WebApplicationException(e.getMessage(), 404);
+      }
+      throw new WebApplicationException(e.getMessage(), 400);
+    }
 
     return data;
   }

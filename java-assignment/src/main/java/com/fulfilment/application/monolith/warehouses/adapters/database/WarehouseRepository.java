@@ -11,7 +11,7 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
 
   @Override
   public List<Warehouse> getAll() {
-    return this.listAll().stream().map(DbWarehouse::toWarehouse).toList();
+    return find("archivedAt is null").list().stream().map(DbWarehouse::toWarehouse).toList();
   }
 
   @Override
@@ -24,29 +24,35 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
     entity.stock = warehouse.stock;
     entity.createdAt = warehouse.createdAt;
     entity.archivedAt = warehouse.archivedAt;
+
+    persist(entity);
   }
 
   @Override
   public void update(Warehouse warehouse) {
-    DbWarehouse entity = find("businessUnitCode", warehouse.businessUnitCode).firstResult();
+    DbWarehouse entity = find("businessUnitCode = ?1 and archivedAt is null", warehouse.businessUnitCode).firstResult();
 
     if (entity == null) {
       throw new IllegalArgumentException("Warehouse not found");
     }
+
     entity.location = warehouse.location;
     entity.capacity = warehouse.capacity;
     entity.stock = warehouse.stock;
+    entity.archivedAt = warehouse.archivedAt;
   }
 
   @Override
   public void remove(Warehouse warehouse) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'remove'");
+    DbWarehouse entity = find("businessUnitCode = ?1 and archivedAt is null", warehouse.businessUnitCode).firstResult();
+    if (entity != null) {
+      delete(entity);
+    }
   }
 
   @Override
   public Warehouse findByBusinessUnitCode(String buCode) {
-    DbWarehouse dbWarehouse = find("businessUnitCode", buCode).firstResult();
+    DbWarehouse dbWarehouse = find("businessUnitCode = ?1 and archivedAt is null", buCode).firstResult();
 
     return dbWarehouse == null ? null : dbWarehouse.toWarehouse();
   }

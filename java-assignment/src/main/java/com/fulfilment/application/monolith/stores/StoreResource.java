@@ -29,9 +29,6 @@ import jakarta.enterprise.event.Event;
 public class StoreResource {
 
   @Inject
-  LegacyStoreManagerGateway legacyStoreManagerGateway;
-
-  @Inject
   Event<StoreCreatedEvent> storeCreatedEvent;
 
   @Inject
@@ -85,7 +82,7 @@ public class StoreResource {
     entity.name = updatedStore.name;
     entity.quantityProductsInStock = updatedStore.quantityProductsInStock;
 
-    storeUpdatedEvent.fire(new StoreUpdatedEvent(updatedStore));
+    storeUpdatedEvent.fire(new StoreUpdatedEvent(entity));
 
     return entity;
   }
@@ -112,7 +109,7 @@ public class StoreResource {
       entity.quantityProductsInStock = updatedStore.quantityProductsInStock;
     }
 
-    storeUpdatedEvent.fire(new StoreUpdatedEvent(updatedStore));
+    storeUpdatedEvent.fire(new StoreUpdatedEvent(entity));
 
     return entity;
   }
