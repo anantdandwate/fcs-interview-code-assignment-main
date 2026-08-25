@@ -30,6 +30,38 @@ Execute the Maven build on the root of the project:
 ./mvnw package
 ```
 
+## Testing and Coverage
+
+Run unit tests:
+
+```sh
+./mvnw test
+```
+
+Generate JaCoCo coverage report:
+
+```sh
+./mvnw test jacoco:report
+```
+
+Run coverage gate (80%+ on assignment core packages):
+
+```sh
+./mvnw verify
+```
+
+Coverage report output:
+
+```text
+target/site/jacoco/index.html
+```
+
+Notes:
+
+- `mvn test` executes unit tests (currently 14).
+- Integration tests (`*IT`) are not executed by surefire in `mvn test`.
+- Coverage gate is enforced for `location` and `warehouses.domain.usecases` packages at 80% line coverage.
+
 ## Running the demo
 
 ### Live coding with Quarkus
@@ -70,15 +102,19 @@ Then run it:
 ```sh
 java -jar ./target/quarkus-app/quarkus-run.jar
 ```
+
     Have a look at how fast it boots.
     Or measure total native memory consumption...
-
 
 ## See the demo in your browser
 
 Navigate to:
 
 <http://localhost:8080/index.html>
+
+Health check endpoint:
+
+<http://localhost:8080/q/health>
 
 Have fun, and join the team of contributors!
 
